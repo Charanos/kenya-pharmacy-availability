@@ -416,6 +416,166 @@ select.field { appearance: none; padding-right: 26px; cursor: pointer;
   border-bottom: 1px solid var(--line);
 }
 
+/* ========================================================= overview =====
+   The overview is an analytical brief, not a dashboard of unrelated tiles.
+   Headings live in the page rhythm; cards hold only the data object itself. */
+.overview-page { width: 100%; }
+.overview-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-5);
+}
+.overview-title-block { min-width: 0; }
+.overview-head .h1 { margin-top: 5px; font-size: clamp(28px, 2.2vw, 34px); line-height: 1.08; letter-spacing: -.04em; }
+.overview-lede {
+  max-width: 650px; margin: 11px 0 0; color: var(--ink-2);
+  font-size: 13px; line-height: 1.55;
+}
+.overview-head-actions { padding-bottom: 2px; }
+
+.overview-pulse-head { padding-bottom: 14px; }
+.overview-pulse-asof {
+  padding-bottom: 1px; color: var(--ink-3); font-family: var(--mono);
+  font-size: 10.5px; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.overview-pulse .kpis { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.overview-provenance {
+  border: 1px solid var(--line); border-top: 0;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+.overview-pulse .notice {
+  border-color: color-mix(in srgb, var(--warn) 18%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--warn) 68%, transparent);
+}
+
+.overview-network-grid {
+  display: grid; grid-template-columns: minmax(0, 1.36fr) minmax(330px, .94fr);
+  gap: var(--s-6); align-items: stretch;
+}
+.overview-network-side { display: flex; flex-direction: column; gap: var(--s-6); min-width: 0; }
+.overview-network-side .card { flex: 1; }
+.overview-network-grid .section-head { padding-bottom: 11px; }
+.overview-source-section .card { padding: 18px 22px 20px; }
+.overview-source-section .barlist { min-height: 100%; justify-content: space-between; }
+.overview-type-section .card { padding: 18px 20px; }
+.overview-band-section .card { padding: 17px 20px; }
+.overview-type-section .caption, .overview-band-section .caption { max-width: 64ch; }
+
+.overview-shortage .section-head { padding-bottom: 14px; }
+.overview-shortage .card { border-top-color: var(--line-strong); }
+.overview-shortage .tbl th { background: var(--surface-sunk); }
+.overview-shortage .tbl tbody tr:last-child td { border-bottom: 0; }
+
+.overview-analysis-grid {
+  display: grid; grid-template-columns: minmax(0, .94fr) minmax(0, 1.15fr) minmax(250px, .84fr);
+  gap: var(--s-6); align-items: stretch;
+}
+.overview-analysis-grid .section-head { padding-bottom: 11px; }
+.overview-analysis-grid .card { min-height: 248px; justify-content: center; }
+.overview-price-section .card { padding: 18px 20px 14px; }
+.overview-coverage-section .card { padding: 14px 18px 10px; }
+.overview-confidence-section .card { padding: 18px 20px; }
+.overview-analysis-grid .caption { max-width: 48ch; }
+
+/* ======================================================== catalogue =====
+   This is a query workspace. The filter rail is an instrument panel, the
+   command row stays compact, and the continuous ledger is the primary object
+   — no competing panel chrome around a table that needs to be scanned. */
+.catalogue-shell {
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  height: 100%; min-height: 0; background: var(--paper);
+}
+.catalogue-shell.facets-open { grid-template-columns: 252px minmax(0, 1fr); }
+.catalogue-facets {
+  min-height: 0; overflow-y: auto; background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+.catalogue-facet-top {
+  position: sticky; top: 0; z-index: 3; padding: 12px 14px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border-bottom: 1px solid var(--line); backdrop-filter: blur(12px);
+}
+.catalogue-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.catalogue-toolbar {
+  flex-shrink: 0; padding: 12px 16px 11px; background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.catalogue-command-row { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.catalogue-search { flex: 1; max-width: 510px; height: 32px; }
+.catalogue-view-switch { margin-left: auto; border-radius: var(--r); }
+.catalogue-result-total { min-width: 88px; text-align: right; }
+.catalogue-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 10px; }
+.catalogue-telemetry { flex-shrink: 0; border-top: 0; padding: 9px 16px; background: var(--surface-sunk); }
+.catalogue-grid-head {
+  display: grid; align-items: center; gap: 10px; height: 34px; padding: 0 16px;
+  flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.catalogue-grid-head .eyebrow { font-size: 9px; }
+.catalogue-grid-scroll { flex: 1; background: var(--surface); }
+.catalogue-row {
+  display: grid; align-items: center; gap: 10px; height: 34px; padding: 0 16px;
+  border-bottom: 1px solid var(--line-faint); background: transparent; cursor: pointer;
+  transition: background .12s ease, box-shadow .12s ease;
+}
+.catalogue-row:hover { background: var(--surface-hover); }
+.catalogue-row[data-active='true'] { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.catalogue-chart-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-6); align-items: stretch;
+}
+.catalogue-chart-grid .section .card { min-height: 230px; }
+.catalogue-chart-grid .section:nth-child(2) .card { display: flex; align-items: center; }
+.catalogue-matrix-page { max-width: 1360px; }
+
+/* ========================================================== sources =====
+   Sources is a roster of evidence, not a generic admin list. The compact
+   status band makes the reporting denominator visible before any chart or
+   rate, and the ledger holds the deeper scrape provenance. */
+.sources-head .h1 { margin-top: 5px; font-size: clamp(28px, 2.2vw, 34px); line-height: 1.08; letter-spacing: -.04em; }
+.sources-lede { max-width: 650px; margin: 11px 0 0; line-height: 1.55; }
+.sources-stack { gap: var(--s-6); }
+.sources-status-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface);
+}
+.sources-status-strip > div { display: grid; grid-template-columns: auto auto; gap: 2px 8px; align-items: baseline; padding: 15px 18px; border-left: 1px solid var(--line-faint); }
+.sources-status-strip > div:first-child { border-left: 0; }
+.sources-status-strip span { grid-column: 1 / -1; color: var(--ink-3); font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.sources-status-strip b { color: var(--ink); font-size: 20px; font-weight: 500; letter-spacing: -.04em; }
+.sources-status-strip small { color: var(--ink-3); font-size: 10.5px; }
+.sources-status-strip > div:nth-child(3) b { color: var(--warn); }
+.sources-status-strip > div:nth-child(4) b { color: var(--ink-3); }
+
+.sources-network-grid { display: grid; grid-template-columns: minmax(0, 1.16fr) minmax(320px, .84fr); gap: var(--s-6); align-items: stretch; }
+.sources-network-grid .section-head { padding-bottom: 11px; }
+.sources-availability .card { padding: 18px 22px 20px; }
+.sources-availability .barlist { min-height: 100%; justify-content: space-between; }
+.sources-roster .card { padding: 12px 20px; }
+.sources-roster-list { display: flex; flex-direction: column; }
+.sources-roster-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 50px; align-items: center; gap: 9px;
+  min-height: 31px; border-bottom: 1px solid var(--line-faint); font-size: 11.5px;
+}
+.sources-roster-row:last-child { border-bottom: 0; }
+.sources-roster-row > .num { text-align: right; }
+
+.sources-ledger .section-head { padding-bottom: 14px; }
+.sources-ledger .card { border-top-color: var(--line-strong); }
+.sources-ledger .tbl th { background: var(--surface-sunk); }
+.sources-ledger .tbl tbody tr:last-child td { border-bottom: 0; }
+.sources-detail-row { cursor: default !important; }
+.sources-detail-row td { height: auto; padding: 14px 18px 18px; background: var(--surface-sunk); }
+.sources-detail-kv { max-width: 720px; grid-template-columns: 150px 1fr; }
+.sources-detail-action { margin-top: 14px; }
+
+.sources-absent .card { padding: 14px 20px; }
+.sources-absent-list { display: flex; flex-direction: column; }
+.sources-absent-row {
+  display: grid; grid-template-columns: 15px minmax(130px, .28fr) 1fr; align-items: center; gap: 8px;
+  min-height: 32px; color: var(--ink-2); font-size: 11.5px; border-bottom: 1px solid var(--line-faint);
+}
+.sources-absent-row:last-child { border-bottom: 0; }
+.sources-absent-row > span:nth-child(2) { color: var(--ink); font-weight: 500; }
+
 /* Major regions are separated by air first and a hairline second. The rule
    sits centred in the gap, so it reads as punctuation between arguments
    rather than as another box edge. */
@@ -489,6 +649,64 @@ select.field { appearance: none; padding-right: 26px; cursor: pointer;
   .kpi:nth-child(odd) { border-left: none; }
   .kpi:nth-child(-n + 2) { border-top: none; }
   .kpi:nth-child(3) { border-top: 1px solid var(--line-faint); }
+}
+
+@media (max-width: 1280px) {
+  .overview-network-grid { grid-template-columns: minmax(0, 1.18fr) minmax(300px, .82fr); gap: var(--s-5); }
+  .overview-analysis-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5); }
+  .overview-confidence-section { grid-column: span 2; }
+  .overview-confidence-section .card { min-height: 220px; }
+}
+
+@media (max-width: 980px) {
+  .overview-head { align-items: flex-start; }
+  .overview-network-grid { grid-template-columns: 1fr; }
+  .overview-network-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+  .overview-network-side .section { display: flex; }
+  .catalogue-shell.facets-open { grid-template-columns: 222px minmax(0, 1fr); }
+  .catalogue-search { max-width: none; }
+  .catalogue-result-total { display: none; }
+  .sources-network-grid { grid-template-columns: 1fr; }
+  .sources-roster-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+}
+
+@media (max-width: 760px) {
+  .overview-head { display: block; }
+  .overview-head-actions { margin: 16px 0 0; padding: 0; }
+  .overview-lede { font-size: 12px; }
+  .overview-pulse-head { align-items: flex-start; }
+  .overview-pulse-asof { display: none; }
+  .overview-provenance { padding: 10px 12px; gap: 5px 7px; }
+  .overview-provenance .sep { display: none; }
+  .overview-network-side, .overview-analysis-grid { grid-template-columns: 1fr; }
+  .overview-confidence-section { grid-column: auto; }
+  .overview-analysis-grid .card { min-height: 0; }
+  .overview-source-section .card { padding: 16px; }
+  .overview-source-section .barrow { grid-template-columns: 82px minmax(0, 1fr) 42px; gap: 7px; }
+  .overview-source-section .barrow-label, .overview-source-section .barval { font-size: 10.5px; }
+  .overview-source-section .bartrack { height: 13px; }
+  .overview-shortage .tbl th:nth-child(2), .overview-shortage .tbl td:nth-child(2) { display: none; }
+  .overview-shortage .tbl th, .overview-shortage .tbl td { padding-left: 10px; padding-right: 10px; }
+  .catalogue-shell.facets-open { grid-template-columns: 1fr; }
+  .catalogue-facets { max-height: 44vh; border-right: 0; border-bottom: 1px solid var(--line); }
+  .catalogue-toolbar { padding: 10px 12px; }
+  .catalogue-command-row { flex-wrap: wrap; }
+  .catalogue-search { order: 3; flex-basis: 100%; }
+  .catalogue-view-switch { margin-left: auto; }
+  .catalogue-telemetry { padding: 8px 12px; }
+  .catalogue-telemetry .sep { display: none; }
+  .catalogue-grid-head, .catalogue-row { padding-left: 12px; padding-right: 12px; }
+  .catalogue-chart-grid { grid-template-columns: 1fr; gap: var(--s-6); }
+  .catalogue-chart-grid .section .card { min-height: 0; }
+  .sources-status-strip { grid-template-columns: repeat(2, 1fr); }
+  .sources-status-strip > div:nth-child(odd) { border-left: 0; }
+  .sources-status-strip > div:nth-child(n + 3) { border-top: 1px solid var(--line-faint); }
+  .sources-roster-list { grid-template-columns: 1fr; }
+  .sources-roster-row { grid-template-columns: minmax(0, 1fr) auto 44px; }
+  .sources-ledger .tbl th:nth-child(2), .sources-ledger .tbl td:nth-child(2),
+  .sources-ledger .tbl th:nth-child(4), .sources-ledger .tbl td:nth-child(4) { display: none; }
+  .sources-detail-kv { grid-template-columns: 110px 1fr; }
+  .sources-absent-row { grid-template-columns: 15px minmax(100px, .38fr) 1fr; }
 }
 
 /* The provenance line: value, denominator, roster, caveat, date, algorithm.

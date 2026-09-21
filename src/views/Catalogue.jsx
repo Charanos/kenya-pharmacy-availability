@@ -96,16 +96,13 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
   const gridTemplate = COLUMNS.map((c) => c.w).join(' ');
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: showFacets ? '252px 1fr' : '1fr', height: '100%', minHeight: 0 }}>
+    <div className={`catalogue-shell${showFacets ? ' facets-open' : ''}`}>
       {tip.node}
 
       {/* ---------------------------------------------------------- facets */}
       {showFacets && (
-        <aside style={{
-          borderRight: '1px solid var(--line)', background: 'var(--surface)',
-          overflowY: 'auto', minHeight: 0,
-        }}>
-          <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)' }}>
+        <aside className="catalogue-facets">
+          <div className="catalogue-facet-top">
             <div className="row">
               <span className="eyebrow">Refine</span>
               <button className="btn btn-ghost btn-sm spacer"
@@ -248,18 +245,15 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
       )}
 
       {/* ------------------------------------------------------------ main */}
-      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
+      <div className="catalogue-main">
         {/* toolbar */}
-        <div style={{
-          padding: '10px 16px', borderBottom: '1px solid var(--line)',
-          background: 'var(--surface)', flexShrink: 0,
-        }}>
-          <div className="row" style={{ gap: 9 }}>
+        <div className="catalogue-toolbar">
+          <div className="catalogue-command-row">
             <button className="btn btn-icon" onClick={() => setShowFacets(!showFacets)}
-              title={showFacets ? 'Hide filters' : 'Show filters'}>
+              title={showFacets ? 'Hide filters' : 'Show filters'} aria-pressed={showFacets}>
               <Icon name="filter" size={14} />
             </button>
-            <div className="field" style={{ flex: 1, maxWidth: 480 }}>
+            <div className="field catalogue-search">
               <Icon name="search" size={14} />
               <input
                 value={filters.q}
@@ -270,18 +264,18 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
                 <button onClick={() => patch({ q: '' })} className="dim"><Icon name="x" size={12} /></button>
               )}
             </div>
-            <div className="seg spacer">
+            <div className="seg catalogue-view-switch">
               {[['grid', 'Grid'], ['matrix', 'Matrix'], ['charts', 'Charts']].map(([v, l]) => (
                 <button key={v} aria-pressed={view === v} onClick={() => setView(v)}>{l}</button>
               ))}
             </div>
-            <span className="num tiny dim nowrap">
+            <span className="num tiny dim nowrap catalogue-result-total">
               {n0(rows.length)} of {compact(P.n)}
             </span>
           </div>
 
           {chips.length > 0 && (
-            <div className="row wrap" style={{ marginTop: 9, gap: 5 }}>
+            <div className="catalogue-chip-row">
               {chips.map((c) => (
                 <Chip key={c.key} active onClear={() => patch(c.clear)}>{c.label}</Chip>
               ))}
@@ -293,7 +287,7 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
         </div>
 
         {/* result summary strip */}
-        <div className="provenance" style={{ borderTop: 'none', flexShrink: 0 }}>
+        <div className="provenance catalogue-telemetry">
           <span><b className="num" style={{ color: 'var(--ink)' }}>{n0(stats.clinical)}</b> clinical</span>
           <span className="sep">·</span>
           <span><b className="num" style={{ color: 'var(--ink)' }}>{n0(stats.oosAny)}</b> with a stockout</span>
@@ -314,7 +308,7 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
           />
         ) : view === 'charts' ? (
           <div className="scroll">
-            <div className="page grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))' }}>
+            <div className="page catalogue-chart-grid">
               <Panel eyebrow="Selection" title="Availability by source">
                 <SourceBars rows={sources} tip={tip} selected={filters.shopsAny}
                   onPick={(bit) => toggle('shopsAny', bit)} />
@@ -336,7 +330,7 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
           </div>
         ) : view === 'matrix' ? (
           <div className="scroll">
-            <div className="page">
+            <div className="page catalogue-matrix-page">
               <Panel
                 eyebrow={`${n0(rows.length)} products · showing first 40`}
                 title="Availability matrix"
@@ -354,12 +348,7 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
           </div>
         ) : (
           <>
-            <div style={{
-              display: 'grid', gridTemplateColumns: gridTemplate, gap: 10,
-              padding: '0 16px', height: 32, alignItems: 'center',
-              borderBottom: '1px solid var(--line)', background: 'var(--surface)',
-              flexShrink: 0,
-            }}>
+            <div className="catalogue-grid-head" style={{ gridTemplateColumns: gridTemplate }}>
               {COLUMNS.map((c) => (
                 <button key={c.key}
                   className="eyebrow trunc"
@@ -383,7 +372,7 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
               ))}
             </div>
 
-            <div ref={viewportRef} className="scroll" style={{ flex: 1 }}>
+            <div ref={viewportRef} className="scroll catalogue-grid-scroll">
               <div style={{ height: rows.length * ROW_H, position: 'relative' }}>
                 <div style={{ transform: `translateY(${range.start * ROW_H}px)` }}>
                   {rows.slice(range.start, range.end).map((i) => (
@@ -416,15 +405,9 @@ function Row({ store, i, template, active, onSelect, tip }) {
   return (
     <div
       onClick={onSelect}
-      style={{
-        display: 'grid', gridTemplateColumns: template, gap: 10,
-        alignItems: 'center', height: ROW_H, padding: '0 16px',
-        borderBottom: '1px solid var(--line-faint)',
-        background: active ? 'var(--accent-soft)' : undefined,
-        cursor: 'pointer',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = active ? 'var(--accent-soft)' : 'var(--surface-hover)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = active ? 'var(--accent-soft)' : 'transparent'; }}
+      className="catalogue-row"
+      data-active={active}
+      style={{ gridTemplateColumns: template }}
     >
       <div className="trunc" style={{ fontSize: 12 }}>
         {P.name[i]}

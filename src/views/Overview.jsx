@@ -45,25 +45,36 @@ export default function Overview({ store, onNavigate, setFilters }) {
   const jump = (patch) => { setFilters({ ...EMPTY, ...patch }); onNavigate('catalogue'); };
 
   return (
-    <div className="page">
+    <div className="page overview-page">
       {tip.node}
 
-      <header className="page-head">
-        <div className="row" style={{ alignItems: 'flex-end' }}>
+      <header className="page-head overview-head">
+        <div className="overview-title-block">
           <div>
             <div className="eyebrow">Latest snapshot · {snapshotDate}</div>
-            <h1 className="h1" style={{ marginTop: 5 }}>Availability overview</h1>
+            <h1 className="h1">Availability overview</h1>
           </div>
-          <div className="section-actions">
+          <p className="overview-lede">
+            A verified view of observed catalogue availability, with non-reporting feeds
+            quarantined from the network rate.
+          </p>
+        </div>
+        <div className="section-actions overview-head-actions">
             <button className="btn btn-sm" onClick={() => onNavigate('sources')}>Sources</button>
             <button className="btn btn-sm" onClick={() => onNavigate('quality')}>Data quality</button>
-          </div>
         </div>
       </header>
 
       <div className="stack">
         {/* ------------------------------------------------- headline --- */}
-        <section className="section">
+        <section className="section overview-pulse">
+          <header className="section-head overview-pulse-head">
+            <div className="titles">
+              <div className="eyebrow">Snapshot pulse</div>
+              <h2 className="section-title">What the network is reporting</h2>
+            </div>
+            <span className="overview-pulse-asof">as at {snapshotDate}</span>
+          </header>
           <div className="kpis">
             <Kpi label="Availability" value={n1(h.in_stock_rate_gated)} unit="%"
               note={<><b>{n0(h.in_stock)}</b> of {n0(h.in_stock + h.out_of_stock)} reporting listings</>} />
@@ -81,7 +92,7 @@ export default function Overview({ store, onNavigate, setFilters }) {
               note={<>{n1(100 * cov.catalogue_blocked_on_drugindex)}% of catalogue unclassified</>} />
           </div>
 
-          <div className="provenance">
+          <div className="provenance overview-provenance">
             <Icon name="info" size={11} />
             <span>Snapshot <b style={{ color: 'var(--ink-2)' }}>{meta.run.snapshot_id}</b></span>
             <span className="sep">·</span>
@@ -112,8 +123,9 @@ export default function Overview({ store, onNavigate, setFilters }) {
         <hr className="rule" />
 
         {/* -------------------------------------------------- network --- */}
-        <div className="grid grid-stretch" style={{ gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)' }}>
+        <div className="overview-network-grid">
           <Section
+            className="overview-source-section"
             eyebrow="Network signal"
             title="Availability by source"
             actions={<button className="btn btn-sm btn-ghost" onClick={() => onNavigate('sources')}>
@@ -125,8 +137,9 @@ export default function Overview({ store, onNavigate, setFilters }) {
             <SourceBars rows={sources} tip={tip} onPick={(bit) => jump({ shopsAny: [bit] })} />
           </Section>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-5)', minWidth: 0 }}>
+          <div className="overview-network-side">
             <Section
+              className="overview-type-section"
               eyebrow="Product universe"
               title="Classification mix"
               caption={<>
@@ -139,6 +152,7 @@ export default function Overview({ store, onNavigate, setFilters }) {
             </Section>
 
             <Section
+              className="overview-band-section"
               eyebrow="Cross-source"
               title="Shortage bands"
               caption="Counted against sources that publish a stock signal — eight of fifteen."
@@ -154,6 +168,7 @@ export default function Overview({ store, onNavigate, setFilters }) {
 
         {/* ------------------------------------------------- shortage --- */}
         <Section
+          className="overview-shortage"
           eyebrow="Clinical shortage signal"
           title="Out of stock across multiple sources"
           actions={
@@ -205,20 +220,20 @@ export default function Overview({ store, onNavigate, setFilters }) {
         <hr className="rule" />
 
         {/* ------------------------------------------------- analysis --- */}
-        <div className="grid grid-stretch" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))' }}>
-          <Section eyebrow="Distribution" title="Price" fill
+        <div className="overview-analysis-grid">
+          <Section className="overview-price-section" eyebrow="Distribution" title="Price" fill
             caption="Log-scaled — retail pharmacy prices span four orders of magnitude. Solid rule is the median, dashed are p10 and p90.">
             <PriceCurve prices={stats.prices} p10={stats.price.p10} p50={stats.price.p50}
               p90={stats.price.p90} tip={tip} height={150} />
           </Section>
 
-          <Section eyebrow="Breadth vs availability" title="Coverage" fill
+          <Section className="overview-coverage-section" eyebrow="Breadth vs availability" title="Coverage" fill
             caption="One mark per listed/in-stock pair, sized by product count. The diagonal is full availability; distance below it is the shortfall.">
             <CoveragePlot store={store} rows={all} tip={tip} height={212}
               onPick={(listed) => jump({ listedMin: listed, listedMax: listed })} />
           </Section>
 
-          <Section eyebrow="Resolution" title="Match confidence" fill
+          <Section className="overview-confidence-section" eyebrow="Resolution" title="Match confidence" fill
             caption={<>Confidence falls with short keys, missing pack size and wide price spread, and recovers when independent sources agree on price.</>}>
             <ConfidenceArc counts={stats.byMatch} labels={D.matchBand} tip={tip} size={150} />
           </Section>

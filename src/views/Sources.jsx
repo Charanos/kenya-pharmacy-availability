@@ -26,34 +26,41 @@ export default function Sources({ store, onNavigate, setFilters }) {
   const reporting = present.filter((p) => p.publishes_oos);
 
   return (
-    <div className="page">
+    <div className="page sources-page">
       {tip.node}
-      <header className="page-head">
+      <header className="page-head sources-head">
         <div className="eyebrow">Network</div>
-        <h1 className="h1" style={{ marginTop: 5 }}>Sources</h1>
-        <p className="sub" style={{ marginTop: 7, marginBottom: 0, maxWidth: 640 }}>
+        <h1 className="h1">Sources</h1>
+        <p className="sub sources-lede">
           {present.length} pharmacy catalogues captured, {reporting.length} of which publish an
           out-of-stock state. {absent.length} more are in the panel but absent from this snapshot.
         </p>
       </header>
 
-      <div className="stack">
-      <div className="grid grid-stretch" style={{ gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)' }}>
-        <Panel eyebrow="Catalogue size and availability" title="Every source"
+      <div className="stack sources-stack">
+      <section className="sources-status-strip" aria-label="Source reporting summary">
+        <div><span>Captured</span><b className="num">{present.length}</b><small>catalogues</small></div>
+        <div><span>Reporting</span><b className="num">{reporting.length}</b><small>stock states</small></div>
+        <div><span>Quarantined</span><b className="num">{present.length - reporting.length}</b><small>no usable signal</small></div>
+        <div><span>Absent</span><b className="num">{absent.length}</b><small>this snapshot</small></div>
+      </section>
+
+      <div className="sources-network-grid">
+        <Panel className="sources-availability" eyebrow="Catalogue size and availability" title="Observed availability"
           foot="Hatched sources publish no stock signal; their listing count is real but no rate can be derived.">
           <SourceBars rows={breakdown} tip={tip}
             onPick={(bit) => { setFilters({ ...EMPTY, shopsAny: [bit] }); onNavigate('catalogue'); }} />
         </Panel>
 
-        <Panel eyebrow="Signal quality" title="What each feed publishes">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <Panel className="sources-roster" eyebrow="Signal quality" title="Reporting posture">
+          <div className="sources-roster-list">
             {present.map((p) => (
-              <div key={p.pharmacy_id} className="row" style={{ fontSize: 12 }}>
-                <span className="trunc" style={{ flex: 1 }}>{p.name}</span>
+              <div key={p.pharmacy_id} className="sources-roster-row">
+                <span className="trunc">{p.name}</span>
                 {p.quarantined
                   ? <Tag tone="warn">{p.health_flags === 'implausible_row_count' ? 'scrape failed' : 'no stock signal'}</Tag>
                   : <Tag tone="in">reports stock</Tag>}
-                <span className="num tiny dim" style={{ width: 54, textAlign: 'right' }}>
+                <span className="num tiny dim">
                   {compact(p.listings)}
                 </span>
               </div>
@@ -62,7 +69,7 @@ export default function Sources({ store, onNavigate, setFilters }) {
         </Panel>
       </div>
 
-      <Panel eyebrow="Detail" title="Source ledger" pad={false}>
+      <Panel className="sources-ledger" eyebrow="Detail" title="Source ledger" pad={false}>
         <table className="tbl">
           <thead>
             <tr>
@@ -100,9 +107,9 @@ export default function Sources({ store, onNavigate, setFilters }) {
                     <td className="c dim"><Icon name={expanded ? 'up' : 'down'} size={12} /></td>
                   </tr>
                   {expanded && (
-                    <tr key={`${p.pharmacy_id}-d`} style={{ cursor: 'default' }}>
-                      <td colSpan={8} style={{ height: 'auto', padding: '12px 10px 16px', background: 'var(--surface-sunk)' }}>
-                        <dl className="kv" style={{ gridTemplateColumns: '150px 1fr', maxWidth: 720 }}>
+                    <tr key={`${p.pharmacy_id}-d`} className="sources-detail-row">
+                      <td colSpan={8}>
+                        <dl className="kv sources-detail-kv">
                           <dt>Scrape method</dt><dd>{p.scrape_method}</dd>
                           <dt>Listing identity</dt><dd className="mono micro">{p.listing_key_strategy}</dd>
                           <dt>Distinct stock values</dt><dd className="num">{p.distinct_status_values}</dd>
@@ -115,7 +122,7 @@ export default function Sources({ store, onNavigate, setFilters }) {
                             <><dt>Health</dt><dd style={{ color: 'var(--warn)' }}>{p.health_detail}</dd></>
                           )}
                         </dl>
-                        <button className="btn btn-sm" style={{ marginTop: 12 }}
+                        <button className="btn btn-sm sources-detail-action"
                           onClick={(e) => {
                             e.stopPropagation();
                             setFilters({ ...EMPTY, shopsAny: [b.shop.bit] });
@@ -134,13 +141,13 @@ export default function Sources({ store, onNavigate, setFilters }) {
       </Panel>
 
       {absent.length > 0 && (
-        <Panel eyebrow="Panel members" title="Absent from this snapshot"
+        <Panel className="sources-absent" eyebrow="Panel members" title="Absent from this snapshot"
           foot="Carried explicitly so the denominator change stays visible rather than silently shrinking the network.">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <div className="sources-absent-list">
             {absent.map((p) => (
-              <div key={p.pharmacy_id} className="row" style={{ fontSize: 12 }}>
-                <Icon name="alert" size={13} className="dim" />
-                <span style={{ fontWeight: 500, minWidth: 120 }}>{p.name}</span>
+              <div key={p.pharmacy_id} className="sources-absent-row">
+              <Icon name="alert" size={13} className="dim" />
+                <span>{p.name}</span>
                 <span className="dim">{p.absent_reason}</span>
               </div>
             ))}
