@@ -5,10 +5,11 @@
   "type": "module",
   "description": "Kenya Pharmacy Availability Dashboard - data pipeline (transform + matching engine)",
   "scripts": {
-    "build": "node pipeline/build.js",
+    "build": "vite build",
+    "pipeline:build": "node pipeline/build.js",
     "verify": "node pipeline/verify.js",
     "reclassify": "node pipeline/reclassify.js",
-    "refresh": "node pipeline/build.js && node pipeline/verify.js && node pipeline/export-app.js",
+    "refresh": "npm run pipeline:build && node pipeline/verify.js && node pipeline/export-app.js && vite build",
     "ci": "node pipeline/build.js --strict && node pipeline/verify.js && node pipeline/export-app.js && vite build",
     "dev": "vite",
     "preview": "vite preview",

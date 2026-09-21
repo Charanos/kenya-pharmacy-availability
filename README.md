@@ -9,10 +9,11 @@ asserts it on every build.
 
 ```bash
 npm install
-npm run build       # raw JSON -> data/*.parquet + data/kpad.duckdb
+npm run pipeline:build # raw JSON -> data/*.parquet + data/kpad.duckdb (local data workspace)
 npm run verify      # 75 assertions, non-zero exit on failure
 npm run export:app  # project the views into the browser read model
 npm run dev         # run the interface at localhost:5173
+npm run build       # production Vite bundle from the committed static/app snapshot
 npm run reclassify  # re-score classification after the DrugIndex scrape grows
 npm run ci          # strict build + verify + export + production bundle
 ```
