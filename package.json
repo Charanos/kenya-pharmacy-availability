@@ -1,0 +1,27 @@
+{
+  "name": "kpad-pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kenya Pharmacy Availability Dashboard - data pipeline (transform + matching engine)",
+  "scripts": {
+    "build": "node pipeline/build.js",
+    "verify": "node pipeline/verify.js",
+    "reclassify": "node pipeline/reclassify.js",
+    "refresh": "node pipeline/build.js && node pipeline/verify.js && node pipeline/export-app.js",
+    "ci": "node pipeline/build.js --strict && node pipeline/verify.js && node pipeline/export-app.js && vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "build:app": "vite build",
+    "export:app": "node pipeline/export-app.js"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.5.5-r.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.0"
+  }
+}

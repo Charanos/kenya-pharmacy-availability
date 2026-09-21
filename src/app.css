@@ -1,0 +1,703 @@
+/* =============================================================================
+   Kenya Pharmacy Availability — design system
+
+   The look is instrument, not poster: near-monochrome, hairline rules instead
+   of card soup, one accent, tabular numerals everywhere, and colour reserved
+   for things that genuinely encode data. Status hues appear only where stock
+   state is being shown; nothing else is tinted.
+
+   Everything is a token. No component hardcodes a colour or a radius.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* --- surface ---------------------------------------------------------- */
+  --paper:        #FBFBF9;
+  --surface:      #FFFFFF;
+  --surface-sunk: #F4F4F1;
+  --surface-hover:#F7F7F4;
+  --rail:         #14161A;
+  --rail-ink:     #E8E8E4;
+  --rail-ink-dim: #8A8F98;
+  --rail-line:    #262A31;
+
+  /* --- ink -------------------------------------------------------------- */
+  --ink:    #14161A;
+  --ink-2:  #575D67;
+  --ink-3:  #8A909B;
+  --ink-4:  #B4B9C1;
+
+  /* --- structure -------------------------------------------------------- */
+  --line:        #E5E3DE;
+  --line-strong: #D2CFC8;
+  --line-faint:  #EEEDE9;
+
+  /* --- accent: one, used only for active and primary -------------------- */
+  --accent:       #1D4E89;
+  --accent-hover: #17406F;
+  --accent-soft:  #EAF0F7;
+  --accent-line:  #C3D4E8;
+
+  /* --- signal: only ever encodes stock state or data quality ------------ */
+  --in:       #2F7A5B;
+  --in-soft:  #E7F1EC;
+  --out:      #AF4034;
+  --out-soft: #FAEAE8;
+  --nosig:    #9AA0A9;
+  --nosig-soft:#EFEFEC;
+  --warn:     #A56212;
+  --warn-soft:#FBF1E3;
+
+  /* --- data ramp: sequential, low -> high ------------------------------- */
+  --ramp-1: #E9EEF4;
+  --ramp-2: #C3D3E5;
+  --ramp-3: #8FAED0;
+  --ramp-4: #5286B7;
+  --ramp-5: #1D4E89;
+
+  /* --- geometry --------------------------------------------------------- */
+  /* Softer than the original 2–3px. At this radius a card reads as a
+     deliberate surface rather than a clipped rectangle, without drifting into
+     the pill-shaped look that dates a product immediately. */
+  --r:    6px;
+  --r-sm: 4px;
+  --r-lg: 10px;
+  --rail-w: 244px;
+  --bar-h:  60px;
+
+  /* --- spacing scale ---------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 22px;
+  --s-6: 30px;
+  --s-7: 44px;
+  --card-pad: 22px;
+
+  /* Depth comes from rules and spacing. These are for overlays only. */
+  --pop: 0 1px 2px rgba(20,22,26,.06), 0 8px 24px -8px rgba(20,22,26,.14);
+  --pop-lg: 0 1px 3px rgba(20,22,26,.08), 0 20px 48px -12px rgba(20,22,26,.22);
+
+  --sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+:root[data-theme='dark'] {
+  --paper:        #0D0E11;
+  --surface:      #141619;
+  --surface-sunk: #101215;
+  --surface-hover:#1B1E23;
+  --rail:         #0A0B0D;
+  --rail-ink:     #E4E5E8;
+  --rail-ink-dim: #767C86;
+  --rail-line:    #1E2127;
+
+  --ink:   #E8E9EC;
+  --ink-2: #A0A6B0;
+  --ink-3: #757B85;
+  --ink-4: #4E545D;
+
+  --line:        #23262C;
+  --line-strong: #31353D;
+  --line-faint:  #1B1E23;
+
+  --accent:       #6FA3DC;
+  --accent-hover: #8CB8E8;
+  --accent-soft:  #16222F;
+  --accent-line:  #2A3D52;
+
+  --in:       #4E9E7A;
+  --in-soft:  #12211B;
+  --out:      #D06B5E;
+  --out-soft: #241513;
+  --nosig:    #6C727B;
+  --nosig-soft:#1A1D21;
+  --warn:     #D0932F;
+  --warn-soft:#231A0E;
+
+  --ramp-1: #1A1F26;
+  --ramp-2: #233649;
+  --ramp-3: #33536F;
+  --ramp-4: #487399;
+  --ramp-5: #6FA3DC;
+
+  --pop: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -8px rgba(0,0,0,.6);
+  --pop-lg: 0 1px 3px rgba(0,0,0,.5), 0 20px 48px -12px rgba(0,0,0,.7);
+}
+
+/* =============================================================== reset === */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: none; padding: 0; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.015em; }
+
+/* Numerals are tabular everywhere. Proportional digits in a data table is the
+   single loudest amateur signal, and these screens are almost all numbers. */
+.num, td .num, .stat-value, .mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+}
+
+::selection { background: var(--accent-soft); color: var(--ink); }
+
+/* Focus is visible and consistent, never removed. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ============================================================== scroll === */
+
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 99px;
+  border: 2px solid var(--paper);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+/* =============================================================== shell === */
+
+.app { display: grid; grid-template-columns: var(--rail-w) 1fr; height: 100vh; }
+.app[data-rail='collapsed'] { --rail-w: 60px; }
+
+.rail {
+  background: var(--rail);
+  color: var(--rail-ink);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--rail-line);
+  overflow: hidden;
+}
+.rail-head {
+  height: var(--bar-h);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--rail-line);
+  flex-shrink: 0;
+}
+.rail-mark {
+  width: 26px; height: 26px; border-radius: var(--r);
+  background: linear-gradient(145deg, #2E6FB8, #16324F);
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 700; letter-spacing: -0.03em;
+  color: #fff; flex-shrink: 0;
+}
+.rail-word { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.rail-word small { display: block; font-size: 10px; color: var(--rail-ink-dim); font-weight: 400; letter-spacing: 0; }
+
+.rail-nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 1px; }
+.rail-label {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--rail-ink-dim); padding: 10px 8px 5px; font-weight: 600;
+}
+.rail-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 8px; border-radius: var(--r);
+  color: var(--rail-ink-dim); font-size: 12.5px; font-weight: 500;
+  width: 100%; text-align: left; white-space: nowrap;
+  transition: background .12s, color .12s;
+}
+.rail-item:hover { background: rgba(255,255,255,.05); color: var(--rail-ink); }
+.rail-item[aria-current='true'] { background: rgba(255,255,255,.09); color: #fff; }
+.rail-item .ico { flex-shrink: 0; opacity: .85; }
+.rail-item .tail {
+  margin-left: auto; font-size: 10px; color: var(--rail-ink-dim);
+  font-family: var(--mono);
+}
+.rail-foot { margin-top: auto; padding: 10px; border-top: 1px solid var(--rail-line); }
+
+.main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+.topbar {
+  height: var(--bar-h);
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.scroll { overflow-y: auto; flex: 1; min-height: 0; }
+.page { padding: 30px 36px 88px; max-width: 1680px; }
+.page-wide { padding: 20px 24px 48px; max-width: none; }
+
+/* =============================================================== type ==== */
+
+.eyebrow {
+  font-size: 10px; font-weight: 600; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.h1 { font-size: 25px; letter-spacing: -0.028em; font-weight: 600; }
+.h2 { font-size: 15px; letter-spacing: -0.018em; font-weight: 600; }
+.h3 { font-size: 13px; letter-spacing: -0.01em; font-weight: 600; }
+.sub { color: var(--ink-2); font-size: 12.5px; }
+.dim { color: var(--ink-3); }
+.faint { color: var(--ink-4); }
+.tiny { font-size: 11px; }
+.micro { font-size: 10px; }
+
+/* =========================================================== controls ==== */
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 11px;
+  border-radius: var(--r);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px; font-weight: 500;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s, transform .06s;
+}
+.btn:hover { background: var(--surface-hover); border-color: var(--ink-4); }
+.btn:active { transform: translateY(0.5px); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+:root[data-theme='dark'] .btn-primary { color: #0B1520; }
+
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-ghost:hover { background: var(--surface-sunk); border-color: transparent; }
+
+.btn-sm { height: 25px; padding: 0 8px; font-size: 11.5px; }
+.btn-icon { width: 30px; padding: 0; justify-content: center; }
+.btn-icon.btn-sm { width: 25px; }
+
+/* Segmented control — one pressed state, no shadows. */
+.seg {
+  display: inline-flex; padding: 2px; gap: 2px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.seg button {
+  padding: 3px 10px; border-radius: 2px;
+  font-size: 11.5px; font-weight: 500; color: var(--ink-2);
+  transition: background .12s, color .12s;
+}
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed='true'] {
+  background: var(--surface); color: var(--ink);
+  box-shadow: 0 1px 1px rgba(20,22,26,.05);
+}
+
+.field {
+  display: flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  transition: border-color .12s, box-shadow .12s;
+}
+.field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field input {
+  border: none; outline: none; background: none;
+  width: 100%; font-size: 12.5px;
+}
+.field input::placeholder { color: var(--ink-4); }
+.field .ico { color: var(--ink-3); flex-shrink: 0; }
+
+select.field { appearance: none; padding-right: 26px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+                    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position: calc(100% - 13px) 13px, calc(100% - 9px) 13px;
+  background-size: 4px 4px, 4px 4px; background-repeat: no-repeat;
+}
+
+.chk { display: flex; align-items: center; gap: 7px; cursor: pointer; padding: 3px 0; }
+.chk input { appearance: none; width: 14px; height: 14px; flex-shrink: 0;
+  border: 1px solid var(--line-strong); border-radius: 2px; background: var(--surface);
+  transition: background .12s, border-color .12s; position: relative; }
+.chk input:checked { background: var(--accent); border-color: var(--accent); }
+.chk input:checked::after {
+  content: ''; position: absolute; left: 4px; top: 1px;
+  width: 4px; height: 8px; border: solid #fff; border-width: 0 1.6px 1.6px 0;
+  transform: rotate(42deg);
+}
+.chk:hover input { border-color: var(--ink-4); }
+
+/* ============================================================== chips ==== */
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 7px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
+  font-size: 11px; font-weight: 500; color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip-active { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.chip button { display: grid; place-items: center; opacity: .6; }
+.chip button:hover { opacity: 1; }
+
+.tag {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 6px;
+  border-radius: 2px; font-size: 10px; font-weight: 600; letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.tag-in    { background: var(--in-soft);    color: var(--in); }
+.tag-out   { background: var(--out-soft);   color: var(--out); }
+.tag-nosig { background: var(--nosig-soft); color: var(--nosig); }
+.tag-warn  { background: var(--warn-soft);  color: var(--warn); }
+.tag-accent{ background: var(--accent-soft);color: var(--accent); }
+.tag-plain { background: var(--surface-sunk); color: var(--ink-2); }
+
+/* ============================================================== panel ==== */
+
+/* --- section: the title belongs ABOVE the card, not inside it -----------
+   Uncarding the heading gives the page a readable rhythm — label, then
+   object, then caption — instead of a stack of boxes each with its own
+   internal chrome. The card is then purely a container for content. */
+
+.section { display: flex; flex-direction: column; min-width: 0; }
+.section-head {
+  display: flex; align-items: flex-end; gap: var(--s-4);
+  padding: 0 2px var(--s-3);
+}
+.section-head > .titles { min-width: 0; }
+.section-title {
+  font-size: 15.5px; font-weight: 600; letter-spacing: -0.022em;
+  line-height: 1.25; margin-top: 5px;
+}
+.section-actions { margin-left: auto; display: flex; align-items: center; gap: var(--s-2); flex-shrink: 0; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--card-pad);
+  min-width: 0;
+}
+.card-flush { padding: 0; overflow: hidden; }
+.card-fill { flex: 1; display: flex; flex-direction: column; }
+/* Lets a section grow inside a flex column so stacked cards in one grid
+   column reach the same bottom edge as a tall neighbour. */
+.section-grow { flex: 1; }
+
+/* Figure caption: sits under the card, reads as editorial annotation rather
+   than as another row of UI chrome. */
+.caption {
+  font-size: 11.5px; line-height: 1.55; color: var(--ink-3);
+  padding: var(--s-3) 2px 0; max-width: 78ch;
+}
+.caption b { color: var(--ink-2); font-weight: 500; }
+
+/* --- page rhythm ------------------------------------------------------- */
+
+.page-head {
+  padding-bottom: var(--s-5); margin-bottom: var(--s-6);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Major regions are separated by air first and a hairline second. The rule
+   sits centred in the gap, so it reads as punctuation between arguments
+   rather than as another box edge. */
+.stack { display: flex; flex-direction: column; gap: var(--s-7); }
+.rule {
+  height: 1px; border: 0; margin: 0;
+  background: linear-gradient(90deg, var(--line) 0%, var(--line) 72%, transparent 100%);
+}
+
+.grid { display: grid; gap: var(--s-5); align-items: start; }
+.grid-stretch { align-items: stretch; }
+.row { display: flex; align-items: center; gap: 8px; }
+.wrap { flex-wrap: wrap; }
+.spacer { margin-left: auto; }
+
+/* =============================================== KPI strip (not cards) === */
+
+/* Deliberately one ruled row of typographic figures rather than a row of
+   equal-weight boxes with icons. The hero on each screen is the chart, not
+   the KPI strip. */
+.kpis {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+/* Three fixed bands — label, figure, note — so every tile's baselines align
+   however long its label wraps. Ragged KPI baselines are the quickest way to
+   make a dense header look unconsidered. */
+.kpi {
+  display: grid;
+  grid-template-rows: 26px auto 1fr;
+  padding: 18px 20px 19px;
+  border-left: 1px solid var(--line-faint);
+  min-width: 0;
+}
+.kpi:first-child { border-left: none; }
+/* Wraps rather than truncating: a clipped label ("Awaiting referen…") is worse
+   than a two-line one, and these labels carry the meaning of the figure. */
+.kpi-label {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .085em;
+  color: var(--ink-3); font-weight: 600; line-height: 1.3;
+}
+.kpi-value {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 24px; font-weight: 500; letter-spacing: -0.035em;
+  line-height: 1.1; white-space: nowrap;
+}
+.kpi-value sup {
+  font-size: 11px; font-weight: 500; margin-left: 2px;
+  color: var(--ink-3); vertical-align: super;
+}
+.kpi-note {
+  font-size: 10.5px; color: var(--ink-3); line-height: 1.4;
+  margin-top: 7px; text-wrap: pretty;
+}
+.kpi-note b { color: var(--ink-2); font-weight: 500; }
+
+/* Six across is too tight below this; wrap to two rows of three and keep the
+   dividers correct at the new grid positions. */
+@media (max-width: 1280px) {
+  .kpis { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
+  .kpi { border-top: 1px solid var(--line-faint); }
+  .kpi:nth-child(3n + 1) { border-left: none; }
+  .kpi:nth-child(-n + 3) { border-top: none; }
+}
+@media (max-width: 760px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpi:nth-child(3n + 1) { border-left: 1px solid var(--line-faint); }
+  .kpi:nth-child(odd) { border-left: none; }
+  .kpi:nth-child(-n + 2) { border-top: none; }
+  .kpi:nth-child(3) { border-top: 1px solid var(--line-faint); }
+}
+
+/* The provenance line: value, denominator, roster, caveat, date, algorithm.
+   A KPI without these is decoration. */
+.provenance {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 11px 18px;
+  border-top: 1px solid var(--line-faint);
+  background: var(--surface-sunk);
+  font-size: 10.5px; color: var(--ink-3);
+}
+.provenance .sep { color: var(--ink-4); }
+
+.notice {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 12px 15px; border-radius: var(--r);
+  background: var(--warn-soft); color: var(--warn);
+  font-size: 11.5px; line-height: 1.45;
+  border: 1px solid transparent;
+}
+.notice .ico { flex-shrink: 0; margin-top: 1px; }
+
+/* ============================================================== table ==== */
+
+.tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
+.tbl th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--surface);
+  text-align: left; font-size: 10px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+  padding: 0 14px; height: 38px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap; user-select: none;
+}
+.tbl th.sortable { cursor: pointer; }
+.tbl th.sortable:hover { color: var(--ink); }
+.tbl th .dir { margin-left: 3px; color: var(--accent); }
+.tbl td {
+  padding: 0 14px; height: 42px;
+  border-bottom: 1px solid var(--line-faint);
+  font-size: 12px; vertical-align: middle;
+}
+.tbl tbody tr { cursor: pointer; }
+.tbl tbody tr:hover td { background: var(--surface-hover); }
+.tbl tbody tr[data-active='true'] td { background: var(--accent-soft); }
+.tbl .r { text-align: right; }
+.tbl .c { text-align: center; }
+.cell-name {
+  max-width: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ====================================================== availability ===== */
+
+/* The per-source strip: one cell per pharmacy, colour encodes stock state.
+   Reads as a barcode at row scale and as a matrix when stacked. */
+.strip { display: inline-flex; gap: 1.5px; align-items: center; }
+.strip i {
+  width: 7px; height: 15px; border-radius: 1px; display: block;
+}
+.cell-in    { background: var(--in); }
+.cell-out   { background: var(--out); }
+.cell-nosig { background: var(--nosig); opacity: .45; }
+.cell-none  { background: var(--line); }
+
+.legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; font-size: 11px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 9px; height: 9px; border-radius: 2px; display: block; }
+
+/* ============================================================== bars ===== */
+
+.barlist { display: flex; flex-direction: column; }
+.barrow {
+  display: grid; grid-template-columns: 104px 1fr 54px;
+  align-items: center; gap: 10px;
+  padding: 5px 0;
+}
+.barrow-label {
+  font-size: 11.5px; color: var(--ink-2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.bartrack { height: 16px; background: var(--surface-sunk); border-radius: 2px; overflow: hidden; position: relative; }
+.barfill { height: 100%; border-radius: 2px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+.barval { font-family: var(--mono); font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* A feed that publishes no stock signal is hatched, never shown as a rate. */
+.hatched {
+  background-image: repeating-linear-gradient(
+    -45deg, var(--nosig) 0 3px, transparent 3px 6px);
+  opacity: .5;
+}
+
+/* ============================================================ drawer ===== */
+
+.scrim {
+  position: fixed; inset: 0; background: rgba(16,18,22,.32);
+  backdrop-filter: blur(1.5px); z-index: 40;
+  animation: fade .15s ease;
+}
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(560px, 94vw);
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--pop-lg);
+  z-index: 41;
+  display: flex; flex-direction: column;
+  animation: slide .22s cubic-bezier(.32,.72,0,1);
+}
+@keyframes fade { from { opacity: 0 } }
+@keyframes slide { from { transform: translateX(14px); opacity: .4 } }
+
+.drawer-head { padding: 15px 18px; border-bottom: 1px solid var(--line); }
+.drawer-body { overflow-y: auto; flex: 1; padding: 16px 18px 40px; }
+
+.kv { display: grid; grid-template-columns: 116px 1fr; gap: 6px 12px; font-size: 12px; }
+.kv dt { color: var(--ink-3); }
+.kv dd { margin: 0; }
+
+/* ============================================================ facets ===== */
+
+.facets { display: flex; flex-direction: column; }
+.facet { border-bottom: 1px solid var(--line-faint); }
+.facet-head {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  padding: 9px 14px; font-size: 11.5px; font-weight: 600; color: var(--ink);
+}
+.facet-head:hover { background: var(--surface-hover); }
+.facet-head .count {
+  margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--ink-3);
+}
+.facet-body { padding: 2px 14px 12px; }
+.facet-opt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 0; font-size: 12px; cursor: pointer; color: var(--ink-2);
+}
+.facet-opt:hover { color: var(--ink); }
+.facet-opt .n {
+  margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+.facet-opt[data-on='true'] { color: var(--ink); font-weight: 500; }
+
+.range { display: flex; align-items: center; gap: 6px; }
+.range .field { flex: 1; min-width: 0; }
+.range .field input { font-family: var(--mono); font-size: 11.5px; }
+
+/* Dual-thumb range, styled to match the rest rather than the browser default */
+input[type='range'] {
+  appearance: none; width: 100%; height: 3px; border-radius: 2px;
+  background: var(--line); outline: none; margin: 8px 0;
+}
+input[type='range']::-webkit-slider-thumb {
+  appearance: none; width: 13px; height: 13px; border-radius: 50%;
+  background: var(--surface); border: 1.5px solid var(--accent); cursor: pointer;
+  box-shadow: 0 1px 2px rgba(20,22,26,.18);
+  transition: transform .1s;
+}
+input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.12); }
+
+/* ============================================================= charts ==== */
+
+/* An SVG is an inline replaced element, so without an explicit width it sizes
+   to its intrinsic viewBox and leaves a gap inside the card. These were
+   filling 91% of their containers. */
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { font-family: var(--sans); font-size: 10px; fill: var(--ink-3); }
+.chart .tnum { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.chart .axis line, .chart .axis path { stroke: var(--line); shape-rendering: crispEdges; }
+.chart .gridline { stroke: var(--line-faint); shape-rendering: crispEdges; }
+.chart .mark { transition: opacity .15s; }
+.chart .mark:hover { opacity: .78; }
+
+.tip {
+  position: fixed; z-index: 60; pointer-events: none;
+  background: var(--rail); color: var(--rail-ink);
+  border-radius: var(--r); padding: 6px 9px;
+  font-size: 11px; line-height: 1.45; box-shadow: var(--pop);
+  max-width: 280px;
+}
+.tip b { color: #fff; font-weight: 600; }
+.tip .num { font-family: var(--mono); }
+
+/* =========================================================== skeleton ==== */
+
+.sk {
+  background: linear-gradient(90deg, var(--surface-sunk) 25%, var(--surface-hover) 50%, var(--surface-sunk) 75%);
+  background-size: 200% 100%;
+  animation: sweep 1.3s ease-in-out infinite;
+  border-radius: var(--r);
+}
+@keyframes sweep { to { background-position: -200% 0 } }
+
+.empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 52px 20px; color: var(--ink-3); text-align: center;
+}
+
+/* ============================================================ utility ==== */
+
+.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+@media (max-width: 1100px) {
+  .app { grid-template-columns: 60px 1fr; }
+  .rail-word, .rail-label, .rail-item span:not(.ico), .rail-item .tail { display: none; }
+  .page { padding: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
