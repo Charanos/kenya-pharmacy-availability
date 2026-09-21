@@ -1033,7 +1033,8 @@ input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.12); }
   gap: 0;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  border-top-left-radius: var(--r-lg);
+  border-top-right-radius: var(--r-lg);
   overflow: hidden;
 }
 
