@@ -54,11 +54,6 @@ export function Section({ title, eyebrow, actions, children, caption, flush, fil
   );
 }
 
-/** Compatibility shim while the remaining views migrate to Section. */
-export function Panel({ foot, pad = true, ...rest }) {
-  return <Section {...rest} caption={foot} flush={!pad} />;
-}
-
 /**
  * A figure with its denominator, caveat and provenance attached.
  * A KPI without those is decoration, so the note is not optional here.
@@ -248,8 +243,18 @@ export function usePopover() {
  */
 export function useVirtual({ count, rowHeight, viewportRef, overscan = 12 }) {
   const [range, setRange] = useState({ start: 0, end: 40 });
+  // Tracking the node in state, not just in a ref, is what makes this survive
+  // a view switch. A ref does not re-run the effect when the element it points
+  // at is replaced, so after Grid -> Matrix -> Grid the scroll listener stayed
+  // bound to the unmounted node and the window never advanced: the grid
+  // scrolled 1.4 million pixels while rendering the same 24 rows.
+  const [node, setNode] = useState(null);
   useEffect(() => {
-    const el = viewportRef.current;
+    setNode(viewportRef.current);
+  });
+
+  useEffect(() => {
+    const el = node;
     if (!el) return undefined;
     let frame = 0;
     const recalc = () => {
@@ -265,6 +270,13 @@ export function useVirtual({ count, rowHeight, viewportRef, overscan = 12 }) {
     const ro = new ResizeObserver(recalc);
     ro.observe(el);
     return () => { el.removeEventListener('scroll', recalc); ro.disconnect(); cancelAnimationFrame(frame); };
-  }, [count, rowHeight, overscan, viewportRef]);
-  return range;
+  }, [count, rowHeight, overscan, node]);
+
+  // Never hand back a window past the end of the current result set: a filter
+  // that shrinks the rows under a scrolled viewport would otherwise slice past
+  // the array and render nothing.
+  return {
+    start: Math.min(range.start, Math.max(0, count - 1)),
+    end: Math.min(range.end, count),
+  };
 }

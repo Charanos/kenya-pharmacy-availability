@@ -221,74 +221,115 @@ export function TypeMix({ counts, labels, tip, onPick, selected }) {
  * Log-scaled, because retail pharmacy prices span four orders of magnitude and
  * linear buckets put 90% of the catalogue in the first bar.
  */
-export function PriceCurve({ prices, p10, p50, p90, tip, height = 120 }) {
+export function PriceCurve({ prices, p10, p50, p90, tip, height = 150 }) {
   const [ref, measured] = useMeasure();
   if (!prices?.length) {
     return <div ref={ref} className="empty tiny">No priced products in this selection</div>;
   }
 
-  const W = measured || 520; const H = height; const pad = { l: 4, r: 4, t: 14, b: 20 };
-  const lo = Math.log10(Math.max(1, prices[0]));
-  const hi = Math.log10(Math.max(10, prices[prices.length - 1]));
+  const W = measured || 520;
+  const H = height;
+  const pad = { l: 8, r: 8, t: 26, b: 26 };
+  const plotW = Math.max(40, W - pad.l - pad.r);
+  const plotH = Math.max(20, H - pad.t - pad.b);
+
+  // Clamp the domain to where the data actually lives. Kenyan pharmacy prices
+  // run from a few shillings to a few hundred thousand, so an untrimmed log
+  // axis spends five of its seven decades empty and squeezes the entire
+  // distribution into the middle third of the card. The 0.5th-99.5th
+  // percentile keeps the shape honest while giving it the full width.
+  const q = (p) => prices[Math.min(prices.length - 1, Math.max(0, Math.round((prices.length - 1) * p)))];
+  const loV = Math.max(1, q(0.005));
+  const hiV = Math.max(loV * 10, q(0.995));
+  const lo = Math.log10(loV);
+  const hi = Math.log10(hiV);
   const span = Math.max(0.5, hi - lo);
-  const BUCKETS = 56;
+
+  const BUCKETS = Math.max(28, Math.min(72, Math.round(plotW / 9)));
   const bins = new Int32Array(BUCKETS);
+  let below = 0;
+  let above = 0;
   for (const v of prices) {
     if (v <= 0) continue;
+    if (v < loV) { below++; continue; }
+    if (v > hiV) { above++; continue; }
     const t = (Math.log10(v) - lo) / span;
     bins[Math.min(BUCKETS - 1, Math.max(0, Math.floor(t * BUCKETS)))]++;
   }
   const peak = Math.max(1, ...bins);
-  const bw = (W - pad.l - pad.r) / BUCKETS;
-  const xOf = (v) => pad.l + ((Math.log10(Math.max(1, v)) - lo) / span) * (W - pad.l - pad.r);
+  const bw = plotW / BUCKETS;
+  const xOf = (v) => pad.l + ((Math.log10(Math.max(loV, Math.min(hiV, v))) - lo) / span) * plotW;
+  const yOf = (n) => H - pad.b - (n / peak) * plotH;
 
+  // Decade ticks, plus the mid-decade where a decade is wide enough to read.
   const ticks = [];
-  for (let e = Math.floor(lo); e <= Math.ceil(hi); e++) {
-    const v = 10 ** e;
-    if (v >= 1 && Math.log10(v) >= lo && Math.log10(v) <= hi) ticks.push(v);
+  for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) ticks.push(10 ** e);
+  if (ticks.length <= 2) {
+    for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) ticks.push(3 * 10 ** e);
   }
+  const tickLabel = (v) => (v >= 1e6 ? `${v / 1e6}m` : v >= 1000 ? `${v / 1000}k` : String(v));
+
+  const marks = [
+    ['p10', p10, 'var(--ink-4)', '2 3'],
+    ['median', p50, 'var(--ink)', ''],
+    ['p90', p90, 'var(--ink-4)', '2 3'],
+  ].filter(([, v]) => v > 0 && v >= loV && v <= hiV);
 
   return (
     <div ref={ref} style={{ width: '100%' }}>
-    <svg className="chart" width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-      {/* Array.from is load-bearing: bins is an Int32Array, and a typed
-          array's map() coerces whatever the callback returns back to a
-          number, so mapping straight to <rect> yielded NaN and the
-          histogram rendered as an empty axis. */}
-      {Array.from(bins).map((n, i) => {
-        const h = (n / peak) * (H - pad.t - pad.b);
-        return (
-          <rect
-            key={i} className="mark"
-            x={pad.l + i * bw} y={H - pad.b - h}
-            width={Math.max(0.5, bw - 1)} height={h}
-            fill="var(--ramp-3)"
-            onMouseMove={(e) => tip.show(e, (
-              <>~KES <span className="num">{n0(10 ** (lo + ((i + 0.5) / BUCKETS) * span))}</span><br />
-                <span className="num">{n0(n)}</span> products</>
-            ))}
-            onMouseLeave={tip.hide}
-          />
-        );
-      })}
-      {[['p10', p10], ['median', p50], ['p90', p90]].map(([label, v]) => v ? (
-        <g key={label}>
-          <line x1={xOf(v)} x2={xOf(v)} y1={pad.t - 4} y2={H - pad.b}
-            stroke={label === 'median' ? 'var(--ink)' : 'var(--ink-4)'}
-            strokeWidth={label === 'median' ? 1.25 : 1}
-            strokeDasharray={label === 'median' ? '' : '2 2'} />
-          <text x={xOf(v)} y={pad.t - 6} textAnchor="middle" className="tnum"
+      <svg className="chart" width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        {/* Baseline first, so bars sit on a rule rather than float. */}
+        <line className="axis" x1={pad.l} x2={W - pad.r} y1={H - pad.b} y2={H - pad.b} stroke="var(--line)" />
+
+        {marks.map(([label, v, tone, dash]) => (
+          <line key={`r${label}`} x1={xOf(v)} x2={xOf(v)} y1={pad.t - 8} y2={H - pad.b}
+            stroke={tone} strokeWidth={label === 'median' ? 1.25 : 1} strokeDasharray={dash} />
+        ))}
+
+        {/* Array.from is load-bearing: bins is an Int32Array, and a typed
+            array's map() coerces whatever the callback returns back to a
+            number, so mapping straight to <rect> yields NaN and the
+            histogram renders as an empty axis. */}
+        {Array.from(bins).map((n, i) => {
+          if (!n) return null;
+          const y = yOf(n);
+          return (
+            <rect
+              key={i} className="mark"
+              x={pad.l + i * bw + 0.5} y={y}
+              width={Math.max(1, bw - 1)} height={H - pad.b - y}
+              rx={1} fill="var(--ramp-3)"
+              onMouseMove={(e) => tip.show(e, (
+                <>
+                  <b>KES {n0(10 ** (lo + (i / BUCKETS) * span))}–{n0(10 ** (lo + ((i + 1) / BUCKETS) * span))}</b><br />
+                  <span className="num">{n0(n)}</span> products · {((100 * n) / prices.length).toFixed(1)}%
+                </>
+              ))}
+              onMouseLeave={tip.hide}
+            />
+          );
+        })}
+
+        {marks.map(([label, v]) => (
+          <text key={`t${label}`} x={xOf(v)} y={pad.t - 12} textAnchor="middle" className="tnum"
             style={{ fontSize: 9, fill: label === 'median' ? 'var(--ink-2)' : 'var(--ink-4)' }}>
-            {label === 'median' ? `KES ${n0(v)}` : ''}
+            {label === 'median' ? `median ${n0(v)}` : label}
           </text>
-        </g>
-      ) : null)}
-      {ticks.map((v) => (
-        <text key={v} x={xOf(v)} y={H - 5} textAnchor="middle" className="tnum" style={{ fontSize: 9 }}>
-          {v >= 1000 ? `${v / 1000}k` : v}
-        </text>
-      ))}
-    </svg>
+        ))}
+
+        {ticks.map((v) => (
+          <text key={v} x={xOf(v)} y={H - pad.b + 13} textAnchor="middle" className="tnum"
+            style={{ fontSize: 9 }}>{tickLabel(v)}</text>
+        ))}
+
+        {/* Say so when the axis is trimmed, rather than hiding the tail. */}
+        {(below + above) > 0 && (
+          <text x={W - pad.r} y={H - pad.b + 13} textAnchor="end"
+            style={{ fontSize: 8.5, fill: 'var(--ink-4)' }}>
+            {n0(below + above)} outside range
+          </text>
+        )}
+      </svg>
     </div>
   );
 }
@@ -379,14 +420,27 @@ export function CoveragePlot({ store, rows, tip, onPick, height = 250 }) {
  */
 export function Matrix({ store, rows, limit = 40, tip, onPick }) {
   const { P, shops } = store;
+  const [ref, measured] = useMeasure();
   const slice = rows.slice(0, limit);
-  const colW = 22;
-  const labelW = 210;
+
+  // Fill the card rather than sitting in a fixed 540px block with dead space
+  // to the right. The label column takes a share of the width (bounded, so it
+  // neither starves the grid nor swallows it) and the source columns divide
+  // what is left. Below the comfortable minimum the whole thing scrolls
+  // horizontally instead of crushing the cells.
+  const MIN_COL = 20;
+  const MAX_COL = 46;
+  const avail = measured || 720;
+  const labelW = Math.round(Math.max(150, Math.min(300, avail * 0.3)));
+  const rawCol = (avail - labelW) / shops.length;
+  const colW = Math.round(Math.max(MIN_COL, Math.min(MAX_COL, rawCol)));
+  const gridW = labelW + shops.length * colW;
+  const cellW = Math.max(8, colW - 5);
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <div style={{ minWidth: labelW + shops.length * colW + 60 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', height: 74, paddingLeft: labelW, gap: 0 }}>
+    <div ref={ref} style={{ overflowX: gridW > avail ? 'auto' : 'visible' }}>
+      <div style={{ width: Math.max(gridW, avail ? 0 : gridW) }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', height: 78, paddingLeft: labelW, gap: 0 }}>
           {shops.map((s) => (
             <div key={s.pharmacy_id} style={{ width: colW, position: 'relative' }}>
               <div style={{
@@ -420,7 +474,7 @@ export function Matrix({ store, rows, limit = 40, tip, onPick }) {
                 <div key={s.pharmacy_id} style={{ width: colW, display: 'grid', placeItems: 'center' }}>
                   <div
                     className={cls}
-                    style={{ width: colW - 4, height: 15, borderRadius: 1.5 }}
+                    style={{ width: cellW, height: 16, borderRadius: 2 }}
                     onMouseMove={(e) => tip.show(e, (
                       <><b>{P.name[i]}</b><br />{s.name}: {
                         !listed ? 'not listed' : out ? 'out of stock' : inS ? 'in stock' : 'no stock signal'
@@ -549,11 +603,14 @@ export function ConfidenceArc({ counts, labels, tip, size }) {
   const TONE = { high: 'var(--ramp-5)', medium: 'var(--ramp-3)', low: 'var(--warn)' };
 
   const W = Math.max(160, Math.min(measured || size || 260, 320));
-  const R = W / 2 - 16;
+  const R = W / 2 - 14;
   const C = W / 2;
   const H = C + 14;
   const circ = Math.PI * R;
-  const stroke = Math.max(12, Math.round(R * 0.22));
+  // A thin band reads as a measuring instrument; a thick one reads as a
+  // novelty gauge. Scaled off the radius so it stays proportionate, but capped
+  // well below the old 22% of R.
+  const stroke = Math.max(5, Math.min(9, Math.round(R * 0.085)));
   let offset = 0;
 
   const top = labels
@@ -564,7 +621,7 @@ export function ConfidenceArc({ counts, labels, tip, size }) {
     <div ref={ref} style={{ width: '100%' }}>
       <svg className="chart" width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ margin: '0 auto' }}>
         <path d={`M ${C - R} ${C} A ${R} ${R} 0 0 1 ${C + R} ${C}`}
-          fill="none" stroke="var(--surface-sunk)" strokeWidth={stroke} strokeLinecap="butt" />
+          fill="none" stroke="var(--surface-sunk)" strokeWidth={stroke} strokeLinecap="round" />
         {labels.map((label, i) => {
           const n = counts[i] ?? 0;
           if (!n) return null;

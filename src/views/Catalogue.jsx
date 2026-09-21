@@ -14,22 +14,41 @@ import {
 } from '../lib/filters.js';
 import { loadListings, listingsFor } from '../lib/store.js';
 import {
-  Panel, Icon, Tag, Chip, StateTag, Strip, Empty, Facet, Check, RangePair,
+  Section, Icon, Tag, Chip, StateTag, Strip, Empty, Facet, Check, RangePair,
   n0, n1, kes, compact, useVirtual,
 } from '../components/ui.jsx';
-import { useTip, SourceBars, TypeMix, PriceCurve, BandSteps, Matrix } from '../components/charts.jsx';
+import { useTip, useMeasure, SourceBars, TypeMix, PriceCurve, BandSteps, Matrix } from '../components/charts.jsx';
 
 const ROW_H = 34;
 
+/**
+ * `minmax(0, …)` on the flexible column is what stops the grid pushing past
+ * its container: a bare `3fr` track refuses to shrink below its content, so
+ * long product names silently shove the right-hand columns out of view.
+ * Fixed tracks are sized to their widest real value, not to their header.
+ */
+/**
+ * Columns in order of what you give up first.
+ *
+ * The grid is the third column of a three-column shell, so at 1180px it gets
+ * about 684px once the nav and facet rails are paid for — and 544px of fixed
+ * tracks left the product name 45px wide, which is useless. Rather than pick
+ * breakpoints against the viewport (which knows nothing about whether the
+ * facet rail is open), each column declares the grid width it needs and the
+ * set is chosen from the measured container.
+ *
+ * Product and Availability never drop: the name is the row's identity and the
+ * strip is the reason the row is interesting.
+ */
 const COLUMNS = [
-  { key: 'name', label: 'Product', sort: 'name', w: 'minmax(220px, 3fr)' },
-  { key: 'type', label: 'Class', sort: null, w: '110px' },
-  { key: 'strip', label: 'Availability by source', sort: null, w: '150px' },
-  { key: 'listed', label: 'Listed', sort: 'listed', w: '60px', r: true },
-  { key: 'oos', label: 'OOS', sort: 'oos', w: '60px', r: true },
-  { key: 'band', label: 'Band', sort: null, w: '82px' },
-  { key: 'price', label: 'Median', sort: 'price', w: '92px', r: true },
-  { key: 'conf', label: 'Match', sort: 'conf', w: '74px', r: true },
+  { key: 'name', label: 'Product', sort: 'name', w: 'minmax(150px, 3fr)', needs: 0 },
+  { key: 'type', label: 'Class', sort: null, w: 'minmax(0, 96px)', needs: 820 },
+  { key: 'strip', label: 'Availability', sort: null, w: '142px', needs: 0 },
+  { key: 'listed', label: 'Listed', sort: 'listed', w: '52px', r: true, needs: 470 },
+  { key: 'oos', label: 'Out', sort: 'oos', w: '48px', r: true, needs: 0 },
+  { key: 'band', label: 'Band', sort: null, w: '72px', needs: 745 },
+  { key: 'price', label: 'Median', sort: 'price', w: '78px', r: true, needs: 560 },
+  { key: 'conf', label: 'Match', sort: 'conf', w: '56px', r: true, needs: 660 },
 ];
 
 export default function Catalogue({ store, filters, setFilters, tipHost }) {
@@ -93,7 +112,14 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
       .slice(0, 22)
   ), [D.category, catN]);
 
-  const gridTemplate = COLUMNS.map((c) => c.w).join(' ');
+  const [gridRef, gridWidth] = useMeasure();
+  // Until the container reports a width, assume it is wide: showing every
+  // column then dropping some is far less jarring than the reverse.
+  const columns = useMemo(
+    () => COLUMNS.filter((c) => !c.needs || gridWidth === 0 || gridWidth >= c.needs),
+    [gridWidth],
+  );
+  const gridTemplate = columns.map((c) => c.w).join(' ');
 
   return (
     <div className={`catalogue-shell${showFacets ? ' facets-open' : ''}`}>
@@ -245,7 +271,7 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
       )}
 
       {/* ------------------------------------------------------------ main */}
-      <div className="catalogue-main">
+      <div className="catalogue-main" ref={gridRef}>
         {/* toolbar */}
         <div className="catalogue-toolbar">
           <div className="catalogue-command-row">
@@ -309,32 +335,32 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
         ) : view === 'charts' ? (
           <div className="scroll">
             <div className="page catalogue-chart-grid">
-              <Panel eyebrow="Selection" title="Availability by source">
+              <Section eyebrow="Selection" title="Availability by source">
                 <SourceBars rows={sources} tip={tip} selected={filters.shopsAny}
                   onPick={(bit) => toggle('shopsAny', bit)} />
-              </Panel>
-              <Panel eyebrow="Selection" title="Price distribution"
-                foot="Log-scaled. Dashed rules mark p10 and p90; solid rule is the median.">
+              </Section>
+              <Section eyebrow="Selection" title="Price distribution"
+                caption="Log-scaled. Dashed rules mark p10 and p90; solid rule is the median.">
                 <PriceCurve prices={stats.prices} p10={stats.price.p10}
                   p50={stats.price.p50} p90={stats.price.p90} tip={tip} />
-              </Panel>
-              <Panel eyebrow="Selection" title="Classification mix">
+              </Section>
+              <Section eyebrow="Selection" title="Classification mix">
                 <TypeMix counts={stats.byType} labels={store.D.type} tip={tip}
                   selected={filters.types} onPick={(i) => toggle('types', i)} />
-              </Panel>
-              <Panel eyebrow="Selection" title="Shortage bands">
+              </Section>
+              <Section eyebrow="Selection" title="Shortage bands">
                 <BandSteps counts={stats.byBand} labels={store.D.band} tip={tip}
                   selected={filters.bands} onPick={(i) => toggle('bands', i)} />
-              </Panel>
+              </Section>
             </div>
           </div>
         ) : view === 'matrix' ? (
           <div className="scroll">
             <div className="page catalogue-matrix-page">
-              <Panel
+              <Section
                 eyebrow={`${n0(rows.length)} products · showing first 40`}
                 title="Availability matrix"
-                foot="* marks a source that publishes no out-of-stock signal; its cells show listing presence only."
+                caption="* marks a source that publishes no out-of-stock signal; its cells show listing presence only."
               >
                 <div className="legend" style={{ marginBottom: 14 }}>
                   <span><i className="cell-in" /> In stock</span>
@@ -343,13 +369,13 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
                   <span><i className="cell-none" /> Not listed</span>
                 </div>
                 <Matrix store={store} rows={rows} limit={40} tip={tip} onPick={setSelected} />
-              </Panel>
+              </Section>
             </div>
           </div>
         ) : (
           <>
             <div className="catalogue-grid-head" style={{ gridTemplateColumns: gridTemplate }}>
-              {COLUMNS.map((c) => (
+              {columns.map((c) => (
                 <button key={c.key}
                   className="eyebrow trunc"
                   style={{
@@ -377,7 +403,7 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
                 <div style={{ transform: `translateY(${range.start * ROW_H}px)` }}>
                   {rows.slice(range.start, range.end).map((i) => (
                     <Row key={P.key[i]} store={store} i={i} tip={tip}
-                      template={gridTemplate}
+                      template={gridTemplate} columns={columns}
                       active={selected === i}
                       onSelect={() => setSelected(i)} />
                   ))}
@@ -389,7 +415,8 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
       </div>
 
       {selected != null && (
-        <Detail store={store} i={selected} onClose={() => setSelected(null)} tip={tip} />
+        <Detail store={store} i={selected} onClose={() => setSelected(null)}
+          onPick={setSelected} tip={tip} />
       )}
     </div>
   );
@@ -397,11 +424,69 @@ export default function Catalogue({ store, filters, setFilters, tipHost }) {
 
 /* ------------------------------------------------------------------ row - */
 
-function Row({ store, i, template, active, onSelect, tip }) {
-  const { P, D } = store;
-  const band = D.band[P.band[i]];
-  const conf = P.matchConf[i];
+/**
+ * Cells are keyed by column so the row renders exactly the set the header
+ * chose. Positional children would silently shift into the wrong tracks the
+ * moment a column drops out at a narrow width.
+ */
+const CELL = {
+  name: ({ P, D, i }) => (
+    <div className="trunc" style={{ fontSize: 12 }}>
+      {P.name[i]}
+      {P.ingredient[i] >= 0 && (
+        <span className="dim tiny" style={{ marginLeft: 6 }}>{D.ingredient[P.ingredient[i]]}</span>
+      )}
+    </div>
+  ),
+  type: ({ P, D, i }) => (
+    <div className="trunc tiny" style={{ color: P.clinical[i] ? 'var(--ink)' : 'var(--ink-3)' }}>
+      {D.type[P.type[i]].replace(/_/g, ' ')}
+    </div>
+  ),
+  strip: ({ store, P, i, tip }) => (
+    <Strip store={store} listedMask={P.listedMask[i]} inMask={P.inMask[i]} oosMask={P.oosMask[i]}
+      onHover={(e, s, cls) => tip.show(e, (
+        <><b>{s.name}</b><br />{
+          cls === 'cell-none' ? 'not listed'
+            : cls === 'cell-out' ? 'out of stock'
+              : cls === 'cell-in' ? 'in stock' : 'no stock signal'
+        }</>
+      ))}
+      onLeave={tip.hide}
+    />
+  ),
+  listed: ({ P, i }) => <div className="num tiny" style={{ textAlign: 'right' }}>{P.nListed[i]}</div>,
+  oos: ({ P, i }) => (
+    <div className="num tiny" style={{ textAlign: 'right', color: P.nOos[i] ? 'var(--out)' : 'var(--ink-4)' }}>
+      {P.nOos[i] || '—'}
+    </div>
+  ),
+  band: ({ P, D, i }) => {
+    const band = D.band[P.band[i]];
+    return (
+      <div className="tiny trunc">
+        {band !== 'none' && <Tag tone={P.nOos[i] >= 3 ? 'out' : 'plain'}>{band}</Tag>}
+      </div>
+    );
+  },
+  price: ({ P, i }) => (
+    <div className="num tiny" style={{ textAlign: 'right' }}>
+      {Number.isFinite(P.priceMed[i]) ? n0(P.priceMed[i]) : '—'}
+    </div>
+  ),
+  conf: ({ P, i }) => {
+    const c = P.matchConf[i];
+    return (
+      <div className="num tiny" style={{
+        textAlign: 'right',
+        color: c >= 0.8 ? 'var(--ink-2)' : c >= 0.55 ? 'var(--warn)' : 'var(--out)',
+      }}>{c.toFixed(2)}</div>
+    );
+  },
+};
 
+function Row({ store, i, template, columns, active, onSelect, tip }) {
+  const { P, D } = store;
   return (
     <div
       onClick={onSelect}
@@ -409,51 +494,29 @@ function Row({ store, i, template, active, onSelect, tip }) {
       data-active={active}
       style={{ gridTemplateColumns: template }}
     >
-      <div className="trunc" style={{ fontSize: 12 }}>
-        {P.name[i]}
-        {P.ingredient[i] >= 0 && (
-          <span className="dim tiny" style={{ marginLeft: 6 }}>
-            {D.ingredient[P.ingredient[i]]}
-          </span>
-        )}
-      </div>
-      <div className="trunc tiny" style={{ color: P.clinical[i] ? 'var(--ink)' : 'var(--ink-3)' }}>
-        {D.type[P.type[i]].replace(/_/g, ' ')}
-      </div>
-      <Strip store={store} listedMask={P.listedMask[i]} inMask={P.inMask[i]} oosMask={P.oosMask[i]}
-        onHover={(e, s, cls) => tip.show(e, (
-          <><b>{s.name}</b><br />{
-            cls === 'cell-none' ? 'not listed'
-              : cls === 'cell-out' ? 'out of stock'
-                : cls === 'cell-in' ? 'in stock' : 'no stock signal'
-          }</>
-        ))}
-        onLeave={tip.hide}
-      />
-      <div className="num tiny" style={{ textAlign: 'right' }}>{P.nListed[i]}</div>
-      <div className="num tiny" style={{ textAlign: 'right', color: P.nOos[i] ? 'var(--out)' : 'var(--ink-4)' }}>
-        {P.nOos[i] || '—'}
-      </div>
-      <div className="tiny">
-        {band !== 'none' && <Tag tone={P.nOos[i] >= 3 ? 'out' : 'plain'}>{band}</Tag>}
-      </div>
-      <div className="num tiny" style={{ textAlign: 'right' }}>
-        {Number.isFinite(P.priceMed[i]) ? n0(P.priceMed[i]) : '—'}
-      </div>
-      <div className="num tiny" style={{
-        textAlign: 'right',
-        color: conf >= 0.8 ? 'var(--ink-2)' : conf >= 0.55 ? 'var(--warn)' : 'var(--out)',
-      }}>
-        {conf.toFixed(2)}
-      </div>
+      {columns.map((c) => {
+        const Cell = CELL[c.key];
+        return Cell ? <Cell key={c.key} store={store} P={P} D={D} i={i} tip={tip} /> : null;
+      })}
     </div>
   );
 }
 
 /* --------------------------------------------------------------- detail - */
 
-function Detail({ store, i, onClose, tip }) {
+function Detail({ store, i, onClose, onPick, tip }) {
   const { P, D } = store;
+
+  // Same molecule, ranked by how many sources actually have it. Capped: a long
+  // list of near-identical SKUs is noise, and the top few answer the question.
+  const substitutes = useMemo(() => {
+    const a = P.ingredient[i];
+    if (a < 0) return [];
+    return (store.byIngredient?.get(a) ?? [])
+      .filter((j) => j !== i)
+      .sort((x, y) => P.nIn[y] - P.nIn[x] || P.nListed[y] - P.nListed[x])
+      .slice(0, 6);
+  }, [store, P, i]);
   const [listings, setListings] = useState(() => (store.listings ? listingsFor(store, i) : null));
   const [loading, setLoading] = useState(!store.listings);
 
@@ -494,8 +557,8 @@ function Detail({ store, i, onClose, tip }) {
               <Icon name="x" size={14} />
             </button>
           </div>
-          <h2 className="h2" style={{ marginTop: 5, fontSize: 16 }}>{P.name[i]}</h2>
-          <div className="row wrap" style={{ marginTop: 8, gap: 5 }}>
+          <h2 className="h2 drawer-title">{P.name[i]}</h2>
+          <div className="row wrap drawer-tags">
             <Tag tone={P.clinical[i] ? 'accent' : 'plain'}>{D.type[P.type[i]].replace(/_/g, ' ')}</Tag>
             {band !== 'none' && <Tag tone={P.nOos[i] >= 3 ? 'out' : 'plain'}>{band}</Tag>}
             {D.review[P.review[i]] === 'needs_review' && <Tag tone="warn">needs review</Tag>}
@@ -504,7 +567,7 @@ function Detail({ store, i, onClose, tip }) {
         </header>
 
         <div className="drawer-body">
-          <div className="kpis" style={{ marginBottom: 16 }}>
+          <div className="kpis">
             <div className="kpi">
               <div className="kpi-label">Listed</div>
               <div className="kpi-value" style={{ fontSize: 19 }}>{P.nListed[i]}</div>
@@ -528,7 +591,7 @@ function Detail({ store, i, onClose, tip }) {
             </div>
           </div>
 
-          <h3 className="h3" style={{ marginBottom: 9 }}>Per-source detail</h3>
+          <div className="drawer-section"><h3>Per-source detail</h3>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[0, 1, 2].map((k) => <div key={k} className="sk" style={{ height: 34 }} />)}
@@ -558,8 +621,11 @@ function Detail({ store, i, onClose, tip }) {
             </table>
           )}
 
-          <h3 className="h3" style={{ marginBottom: 9 }}>Identity &amp; provenance</h3>
-          <dl className="kv">
+          </div>
+
+          <div className="drawer-section">
+            <h3>Identity &amp; provenance</h3>
+            <dl className="kv">
             <dt>Match key</dt>
             <dd className="mono micro" style={{ wordBreak: 'break-all' }}>{P.key[i]}</dd>
             <dt>Match confidence</dt>
@@ -572,12 +638,46 @@ function Detail({ store, i, onClose, tip }) {
             <dd className="mono micro">{P.packSig[i] || <span className="faint">—</span>}</dd>
             <dt>Class confidence</dt>
             <dd className="num">{P.classConf[i].toFixed(2)}</dd>
-            {P.gap[i] >= 0 && (<><dt>Classification gap</dt><dd><Tag tone="warn">{D.gap[P.gap[i]]}</Tag></dd></>)}
-          </dl>
+              {P.gap[i] >= 0 && (<><dt>Classification gap</dt><dd><Tag tone="warn">{D.gap[P.gap[i]]}</Tag></dd></>)}
+            </dl>
+          </div>
+
+          {substitutes.length > 0 && (
+            <div className="drawer-section">
+              <h3>Same active ingredient</h3>
+              <table className="tbl">
+                <tbody>
+                  {substitutes.map((s) => (
+                    <tr key={P.key[s]} onClick={() => onPick?.(s)}>
+                      <td style={{ paddingLeft: 0 }}>
+                        <div className="trunc drawer-source-name">{P.name[s]}</div>
+                        <div className="trunc drawer-source-raw">
+                          {P.nIn[s]} of {P.nListed[s]} sources in stock
+                        </div>
+                      </td>
+                      <td className="r" style={{ width: 86 }}>
+                        {P.nIn[s] > 0
+                          ? <Tag tone="in">{P.nIn[s]} in stock</Tag>
+                          : <Tag tone="out">none in stock</Tag>}
+                      </td>
+                      <td className="num r" style={{ width: 62, fontSize: 11.5 }}>
+                        {Number.isFinite(P.priceMed[s]) ? n0(P.priceMed[s]) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="tiny dim" style={{ marginTop: 10, lineHeight: 1.5 }}>
+                Shares an active ingredient, ranked by how many sources have it in stock.
+                Same molecule is not the same product — check strength and form before
+                treating one as a substitute for another.
+              </div>
+            </div>
+          )}
 
           {P.ingredient[i] >= 0 && (
-            <>
-              <h3 className="h3" style={{ margin: '20px 0 9px' }}>DrugIndex monograph</h3>
+            <div className="drawer-section">
+              <h3>Drug register monograph</h3>
               <dl className="kv">
                 <dt>Active ingredient</dt>
                 <dd>{D.ingredient[P.ingredient[i]]}</dd>
@@ -589,7 +689,7 @@ function Detail({ store, i, onClose, tip }) {
                   ? D.therapeutic[P.therapeutic[i]]
                   : <span className="faint">not filed under a class upstream</span>}</dd>
               </dl>
-            </>
+            </div>
           )}
         </div>
       </aside>

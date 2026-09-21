@@ -9,7 +9,7 @@
 
 import { useMemo, useState } from 'react';
 import { runFilter, sourceBreakdown, EMPTY } from '../lib/filters.js';
-import { Panel, Icon, Tag, n0, n1, compact } from '../components/ui.jsx';
+import { Section, Icon, Tag, n0, n1, compact } from '../components/ui.jsx';
 import { useTip, SourceBars } from '../components/charts.jsx';
 
 export default function Sources({ store, onNavigate, setFilters }) {
@@ -24,6 +24,16 @@ export default function Sources({ store, onNavigate, setFilters }) {
   const present = meta.pharmacies.filter((p) => p.present_in_snapshot);
   const absent = meta.pharmacies.filter((p) => !p.present_in_snapshot);
   const reporting = present.filter((p) => p.publishes_oos);
+
+  // Concentration matters because a panel rate is a weighted average: when
+  // three catalogues carry most of the listings, the network number is largely
+  // theirs and a single feed's behaviour moves it.
+  const concentration = useMemo(() => {
+    const sorted = [...present].sort((a, b) => b.listings - a.listings);
+    const total = sorted.reduce((a, p) => a + p.listings, 0) || 1;
+    const top3 = (100 * sorted.slice(0, 3).reduce((a, p) => a + p.listings, 0)) / total;
+    return { top3, leader: sorted[0]?.name ?? '—' };
+  }, [present]);
 
   return (
     <div className="page sources-page">
@@ -46,13 +56,17 @@ export default function Sources({ store, onNavigate, setFilters }) {
       </section>
 
       <div className="sources-network-grid">
-        <Panel className="sources-availability" eyebrow="Catalogue size and availability" title="Observed availability"
-          foot="Hatched sources publish no stock signal; their listing count is real but no rate can be derived.">
+        <Section className="sources-availability" eyebrow="Catalogue size and availability" title="Observed availability"
+          caption={<>
+            Hatched sources publish no stock signal; their listing count is real but no rate can be
+            derived. The largest three catalogues hold <b>{n1(concentration.top3)}%</b> of all
+            listings, so the panel-wide rate is substantially {concentration.leader}&rsquo;s rate.
+          </>}>
           <SourceBars rows={breakdown} tip={tip}
             onPick={(bit) => { setFilters({ ...EMPTY, shopsAny: [bit] }); onNavigate('catalogue'); }} />
-        </Panel>
+        </Section>
 
-        <Panel className="sources-roster" eyebrow="Signal quality" title="Reporting posture">
+        <Section className="sources-roster" eyebrow="Signal quality" title="Reporting posture">
           <div className="sources-roster-list">
             {present.map((p) => (
               <div key={p.pharmacy_id} className="sources-roster-row">
@@ -66,10 +80,10 @@ export default function Sources({ store, onNavigate, setFilters }) {
               </div>
             ))}
           </div>
-        </Panel>
+        </Section>
       </div>
 
-      <Panel className="sources-ledger" eyebrow="Detail" title="Source ledger" pad={false}>
+      <Section className="sources-ledger" eyebrow="Detail" title="Source ledger" flush>
         <table className="tbl">
           <thead>
             <tr>
@@ -138,11 +152,11 @@ export default function Sources({ store, onNavigate, setFilters }) {
             })}
           </tbody>
         </table>
-      </Panel>
+      </Section>
 
       {absent.length > 0 && (
-        <Panel className="sources-absent" eyebrow="Panel members" title="Absent from this snapshot"
-          foot="Carried explicitly so the denominator change stays visible rather than silently shrinking the network.">
+        <Section className="sources-absent" eyebrow="Panel members" title="Absent from this snapshot"
+          caption="Carried explicitly so the denominator change stays visible rather than silently shrinking the network.">
           <div className="sources-absent-list">
             {absent.map((p) => (
               <div key={p.pharmacy_id} className="sources-absent-row">
@@ -152,7 +166,7 @@ export default function Sources({ store, onNavigate, setFilters }) {
               </div>
             ))}
           </div>
-        </Panel>
+        </Section>
       )}
       </div>
     </div>

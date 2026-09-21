@@ -126,6 +126,20 @@ export async function loadStore(onStage) {
     absent: meta.pharmacies.filter((p) => !p.present_in_snapshot),
     keyIndex: new Map(raw.key.map((k, i) => [k, i])),
     listings: null,
+    // Products grouped by active ingredient, built once. This is the
+    // substitution graph James asked for: when a product is out of stock, the
+    // clinically meaningful question is what else on the panel carries the
+    // same molecule and is in stock somewhere.
+    byIngredient: (() => {
+      const m = new Map();
+      for (let i = 0; i < n; i++) {
+        const a = P.ingredient[i];
+        if (a < 0) continue;
+        if (!m.has(a)) m.set(a, []);
+        m.get(a).push(i);
+      }
+      return m;
+    })(),
   };
 }
 
